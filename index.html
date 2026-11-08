@@ -350,7 +350,7 @@ async function velgSett(){
   const sett = JSON.parse($('sett').dataset.json || '[]').find(s => s.id === id);
   nyeIkoner = {};
   for (const f of sett.filer) {
-    const b = await (await fetch(f)).blob();
+    const b = await (await fetch(f, {cache:'no-store'})).blob();
     leggTilIkon(f, b);
   }
   $('filer').value = '';
