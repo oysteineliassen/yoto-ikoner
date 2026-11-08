@@ -97,6 +97,13 @@
       <button id="lastOpp" disabled>Last opp ikoner</button>
       <div id="melding"></div>
     </div>
+
+    <div class="kort skjult" id="bestillKort">
+      <h2>Mangler ikoner?</h2>
+      <p class="dim" id="bestillTekst" style="margin-top:0"></p>
+      <a id="bestill" class="knapp sek" target="_blank" rel="noopener">🎨 Bestill ikoner fra Claude</a>
+      <div id="venter"></div>
+    </div>
   </section>
 
   <div id="globalMelding"></div>
@@ -245,7 +252,79 @@ async function velgSpilleliste(){
   try { kort = (await api('/content/' + encodeURIComponent(id))).card; }
   catch(e) { melding('melding', 'Kunne ikke hente spillelisten: ' + esc(e.message), 'feil'); }
   tegn();
+  if (!(await autoVelgSett())) tegnBestilling();
 }
+
+// ---------- Bestilling fra Claude ----------
+function hentJson(k, std){ try { return JSON.parse(lager.hent(k)) ?? std; } catch(e){ return std; } }
+function brukteSett(){ return hentJson('yoto_brukte_sett', []); }
+function settListe(){ try { return JSON.parse($('sett').dataset.json || '[]'); } catch(e){ return []; } }
+
+function manglerIkon(){
+  const kapitler = (kort && kort.content && kort.content.chapters) || [];
+  return kapitler.map((k, i) => ({ nr: i + 1, tittel: k.title || (k.tracks && k.tracks[0] && k.tracks[0].title) || '', k }))
+    .filter(x => !iconRef(x.k.display) && !(x.k.tracks || []).some(t => iconRef(t.display)));
+}
+
+function tegnBestilling(){
+  vis('bestillKort', !!kort);
+  if (!kort) return;
+  const mangler = manglerIkon();
+  const venter = hentJson('yoto_bestilling', null);
+  if (!mangler.length) {
+    $('bestillTekst').textContent = 'Alle låtene i denne spillelisten har ikon.';
+    $('bestill').classList.add('skjult');
+  } else {
+    $('bestillTekst').textContent = `${mangler.length} låt${mangler.length > 1 ? 'er' : ''} uten ikon: ` + mangler.map(m => m.nr).join(', ') +
+      '. Knappen åpner Claude med bestillingen ferdig utfylt – trykk send, så dukker ikonene opp her av seg selv.';
+    $('bestill').classList.remove('skjult');
+    const tekst = `Bestilling fra Yoto-ikoner-appen. Lag ikoner etter instruksjonene i CLAUDE.md i GitHub-repoet oysteineliassen/yoto-ikoner, og push dem dit.\n\n` +
+      `Spilleliste: ${kort.title}\ncardId: ${kort.cardId}\n\nLåter som trenger ikon:\n` +
+      mangler.map(m => `${m.nr}. ${m.tittel}`).join('\n');
+    $('bestill').href = 'https://claude.ai/new?q=' + encodeURIComponent(tekst);
+  }
+  $('venter').innerHTML = venter && venter.cardId === kort.cardId
+    ? '<div class="meld info">⏳ Venter på ikoner fra Claude … Appen sjekker selv hvert halve minutt.</div>' : '';
+}
+
+$('bestill') && ($('bestill').onclick = () => {
+  lager.sett('yoto_bestilling', JSON.stringify({ cardId: kort.cardId, tittel: kort.title, kjente: settListe().map(s => s.id), tid: Date.now() }));
+  tegnBestilling(); startVenting();
+});
+
+function nyttSettFor(cardId){
+  const brukt = brukteSett();
+  return settListe().filter(s => s.cardId === cardId && !brukt.includes(s.id)).pop() || null;
+}
+
+async function autoVelgSett(){
+  if (!kort) return false;
+  const s = nyttSettFor(kort.cardId);
+  if (!s || $('sett').value === s.id) return false;
+  $('sett').value = s.id; await velgSett();
+  melding('melding', `✨ Nye ikoner fra Claude er klare (${esc(s.navn)}). Sjekk dem og trykk «Last opp».`, 'ok');
+  return true;
+}
+
+let ventTimer = null;
+function startVenting(){
+  if (ventTimer || !hentJson('yoto_bestilling', null)) return;
+  ventTimer = setInterval(sjekkBestilling, 30000);
+}
+async function sjekkBestilling(){
+  const b = hentJson('yoto_bestilling', null);
+  if (!b) { clearInterval(ventTimer); ventTimer = null; return; }
+  if (Date.now() - b.tid > 6 * 3600 * 1000) { lager.sett('yoto_bestilling', null); tegnBestilling(); return; }
+  if (document.visibilityState !== 'visible') return;
+  await lastSett();
+  const nytt = settListe().find(s => s.cardId === b.cardId && !b.kjente.includes(s.id));
+  if (!nytt) return;
+  lager.sett('yoto_bestilling', null); clearInterval(ventTimer); ventTimer = null;
+  if (kort && kort.cardId === b.cardId) await autoVelgSett();
+  else melding('globalMelding', `✨ Ikonene til «${esc(b.tittel)}» er klare – velg spillelisten for å se dem.`, 'ok');
+  tegnBestilling();
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sjekkBestilling(); });
 
 function nummerFraNavn(navn){
   const m = navn.split('/').pop().match(/^\s*(\d{1,3})/);
@@ -293,6 +372,7 @@ function iconRef(display){ const r = display && display.icon16x16; return r && r
 
 function tegn(){
   const ut = $('sporliste');
+  tegnBestilling();
   if (!kort) { ut.innerHTML = '<span class="dim">Velg spilleliste for å se låtene.</span>'; $('lastOpp').disabled = true; return; }
   const kapitler = (kort.content && kort.content.chapters) || [];
   ut.innerHTML = kapitler.map((k, i) => {
@@ -352,6 +432,7 @@ async function lastOpp(){
     await api('/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(kort) });
     nrListe.forEach(nr => $('st' + nr).textContent = '✅');
     melding('melding', `Ferdig! ${nrListe.length} ikoner er lagt inn på «${esc(kort.title)}».`, 'ok');
+    if ($('sett').value) lager.sett('yoto_brukte_sett', JSON.stringify([...brukteSett(), $('sett').value]));
     nyeIkoner = {}; $('sett').value = ''; $('filer').value = '';
     await velgSpilleliste();
   } catch(e) {
@@ -374,8 +455,9 @@ async function start(){
   vis('innlogging', !innlogget);
   if (!innlogget) return;
   vis('app', true); vis('loggUt', true);
-  await Promise.all([lastSpillelister(), lastSett(), lastIkonbibliotek()]);
-  tegn();
+  await Promise.all([lastSett(), lastIkonbibliotek()]);
+  await lastSpillelister();
+  tegn(); startVenting(); sjekkBestilling();
 }
 
 $('lagreKlient').onclick = () => { const v = $('klientId').value.trim(); if (v) { lager.sett('yoto_klient', v); start(); } };
