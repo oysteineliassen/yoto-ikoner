@@ -101,6 +101,8 @@ const TOKEN = 'https://login.yotoplay.com/oauth/token';
 const API = 'https://api.yotoplay.com';
 const SCOPE = 'user:content:manage offline_access';
 const REDIRECT = location.origin + location.pathname;
+const STANDARD_KLIENT = 'tpc_iC3x4Ca7Rp7CQJuaUpuG3R';
+try { if (!localStorage.getItem('yoto_klient')) localStorage.setItem('yoto_klient', STANDARD_KLIENT); } catch(e){}
 
 const $ = id => document.getElementById(id);
 const lager = {
