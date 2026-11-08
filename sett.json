@@ -23,5 +23,19 @@
    "sett/sett-02/17_Sarahs_Smil.png",
    "sett/sett-02/18_Sabeltanns_Smokk.png"
   ]
+ },
+ {
+  "id": "sett-03",
+  "navn": "Eventyr (låt 1–7)",
+  "filer": [
+   "sett/sett-03/01_Larven_Aldrimett.png",
+   "sett/sett-03/02_Skinnvotten.png",
+   "sett/sett-03/03_Karius_Og_Baktus_1.png",
+   "sett/sett-03/04_Karius_Og_Baktus_2.png",
+   "sett/sett-03/05_Karius_Og_Baktus_3.png",
+   "sett/sett-03/06_Karius_Og_Baktus_4.png",
+   "sett/sett-03/07_Bluey_Extended_Theme_Song.png"
+  ],
+  "cardId": "bdY2k"
  }
 ]
