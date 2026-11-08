@@ -37,5 +37,20 @@
    "sett/sett-03/07_Bluey_Extended_Theme_Song.png"
   ],
   "cardId": "bdY2k"
+ },
+ {
+  "id": "sett-04",
+  "navn": "Delfi og Dolfy (låt 1–8)",
+  "filer": [
+   "sett/sett-04/01_Spoekelsesteinen.png",
+   "sett/sett-04/02_Reke_paa_flaske.png",
+   "sett/sett-04/03_Selredning.png",
+   "sett/sett-04/04_Krabbekroell.png",
+   "sett/sett-04/05_Hval_paa_land.png",
+   "sett/sett-04/06_Torsketroebbel.png",
+   "sett/sett-04/07_Oljeoteren.png",
+   "sett/sett-04/08_Plastmaaken.png"
+  ],
+  "cardId": "1bFsK"
  }
 ]
