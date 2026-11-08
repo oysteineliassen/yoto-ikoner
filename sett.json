@@ -52,5 +52,31 @@
    "sett/sett-04/08_Plastmaaken.png"
   ],
   "cardId": "1bFsK"
+ },
+ {
+  "id": "sett-05",
+  "navn": "Kardemomme by ny film (låt 1–19)",
+  "filer": [
+   "sett/sett-05/01_Kardemommesangen.png",
+   "sett/sett-05/02_Politimester_Bastians_vise.png",
+   "sett/sett-05/03_Kamomilla_spiller.png",
+   "sett/sett-05/04_Visen_om_vaeret.png",
+   "sett/sett-05/05_Den_talende_kamel.png",
+   "sett/sett-05/06_Tante_Sofies_Sinte_Vise.png",
+   "sett/sett-05/07_Polkagalopp.png",
+   "sett/sett-05/08_Trikken_i_Kardemomme_By.png",
+   "sett/sett-05/09_Roevernes_Letevise.png",
+   "sett/sett-05/10_Roeve_Tante_Sofie-vise.png",
+   "sett/sett-05/11_Tante_Sofies_Sinte_Vise_i_Roeverhuset.png",
+   "sett/sett-05/12_Glade_Roevere.png",
+   "sett/sett-05/13_Hurrasang_for_Tobias.png",
+   "sett/sett-05/14_Papegoeyen_fra_Amerika.png",
+   "sett/sett-05/15_Roever-medley.png",
+   "sett/sett-05/16_Fru_Bastians_vise.png",
+   "sett/sett-05/17_Roevernes_Vaskevise.png",
+   "sett/sett-05/18_Barbermestervise.png",
+   "sett/sett-05/19_Hurrasang_for_roeverne.png"
+  ],
+  "cardId": "8fO7J"
  }
 ]
