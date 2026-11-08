@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Yoto-ikoner</title>
+<meta name="theme-color" content="#121212">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="app-ikon/favicon.png">
+<link rel="apple-touch-icon" href="app-ikon/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Yoto-ikoner">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root{--bg:#121212;--kort:#1f1f1f;--kant:#333;--tekst:#f2f2f2;--dim:#a0a0a0;--aksent:#ff5a1f;--ok:#4caf50;--feil:#e53935}
@@ -380,6 +387,7 @@ $('sett').onchange = velgSett;
 $('filer').onchange = velgFiler;
 $('lastOpp').onclick = lastOpp;
 start();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
 </html>
