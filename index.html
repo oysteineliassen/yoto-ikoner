@@ -101,6 +101,7 @@
     <div class="kort skjult" id="bestillKort">
       <h2>Mangler ikoner?</h2>
       <p class="dim" id="bestillTekst" style="margin-top:0"></p>
+      <label style="display:flex;align-items:center;gap:8px;margin:0 0 12px;color:var(--dim)"><input type="checkbox" id="alleLater"> Lag nye ikoner for alle låtene</label>
       <a id="bestill" class="knapp sek" target="_blank" rel="noopener">🎨 Bestill ikoner fra Claude</a>
       <div id="venter"></div>
     </div>
@@ -208,12 +209,17 @@ function loggUt(){
 let kort = null;            // valgt spilleliste (full)
 let nyeIkoner = {};         // nummer -> {navn, blob, url}
 const ikonUrler = {};       // mediaId -> url
+const standardIkoner = new Set(); // Yotos «MYO Default Icon» (plassholderen med pluss)
 
 async function lastIkonbibliotek(){
   for (const sti of ['/media/displayIcons/user/me', '/media/displayIcons/user/yoto']) {
     try {
       const d = await api(sti);
-      (d.displayIcons || []).forEach(i => { if (i.mediaId && i.url) ikonUrler[i.mediaId] = i.url; });
+      (d.displayIcons || []).forEach(i => {
+        if (i.mediaId && i.url) ikonUrler[i.mediaId] = i.url;
+        const tekst = [i.title, i.name, ...(i.publicTags || []), ...(i.tags || [])].filter(Boolean).join(' ');
+        if (sti.endsWith('/yoto') && /default/i.test(tekst)) standardIkoner.add(i.mediaId);
+      });
     } catch(e) { /* ikke kritisk */ }
   }
 }
@@ -263,7 +269,7 @@ function settListe(){ try { return JSON.parse($('sett').dataset.json || '[]'); }
 function manglerIkon(){
   const kapitler = (kort && kort.content && kort.content.chapters) || [];
   return kapitler.map((k, i) => ({ nr: i + 1, tittel: k.title || (k.tracks && k.tracks[0] && k.tracks[0].title) || '', k }))
-    .filter(x => !iconRef(x.k.display) && !(x.k.tracks || []).some(t => iconRef(t.display)));
+    .filter(x => $('alleLater').checked || (!ektIkon(x.k.display) && !(x.k.tracks || []).some(t => ektIkon(t.display))));
 }
 
 function tegnBestilling(){
@@ -369,6 +375,7 @@ async function velgFiler(){
 }
 
 function iconRef(display){ const r = display && display.icon16x16; return r && r.startsWith('yoto:#') ? r.slice(6) : null; }
+function ektIkon(display){ const id = iconRef(display); return !!id && !standardIkoner.has(id); }
 
 function tegn(){
   const ut = $('sporliste');
@@ -468,6 +475,7 @@ $('spilleliste').onchange = velgSpilleliste;
 $('sett').onchange = velgSett;
 $('filer').onchange = velgFiler;
 $('lastOpp').onclick = lastOpp;
+$('alleLater').onchange = tegnBestilling;
 start();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
