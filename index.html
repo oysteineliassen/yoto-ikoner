@@ -99,7 +99,7 @@
 const AUTH = 'https://login.yotoplay.com/authorize';
 const TOKEN = 'https://login.yotoplay.com/oauth/token';
 const API = 'https://api.yotoplay.com';
-const SCOPE = 'user:content:manage offline_access';
+const SCOPE = 'user:content:view user:content:manage user:icons:manage offline_access';
 const REDIRECT = location.origin + location.pathname;
 const STANDARD_KLIENT = 'tpc_iC3x4Ca7Rp7CQJuaUpuG3R';
 try { if (!localStorage.getItem('yoto_klient')) localStorage.setItem('yoto_klient', STANDARD_KLIENT); } catch(e){}
@@ -157,6 +157,7 @@ async function håndterTilbakekomst(){
 }
 
 function lagreTokens(t){
+  lager.sett('yoto_scope', SCOPE);
   lager.sett('yoto_access', t.access_token);
   if (t.refresh_token) lager.sett('yoto_refresh', t.refresh_token);
   lager.sett('yoto_utloper', String(Date.now() + (t.expires_in || 3600) * 1000));
@@ -355,6 +356,9 @@ async function lastOpp(){
 // ---------- Oppstart ----------
 async function start(){
   $('minUrl').textContent = REDIRECT;
+  if (lager.hent('yoto_scope') !== SCOPE) {
+    ['yoto_access','yoto_refresh','yoto_utloper'].forEach(k => lager.sett(k, null));
+  }
   const klient = lager.hent('yoto_klient');
   vis('oppsett', !klient); vis('innlogging', false); vis('app', false); vis('loggUt', false);
   if (!klient) return;
