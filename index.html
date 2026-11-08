@@ -328,10 +328,10 @@ async function lastOpp(){
     for (const nr of nrListe) {
       $('st' + nr).textContent = '⏳';
       const ik = nyeIkoner[nr];
-      const fd = new FormData();
-      fd.append('file', ik.blob, ik.navn);
+      const type = /\.gif$/i.test(ik.navn) ? 'image/gif' : 'image/png';
+      const data = new Blob([await ik.blob.arrayBuffer()], { type });
       const filnavn = ik.navn.replace(/\.[^.]+$/, '').replace(/[^\w\-]+/g, '_').slice(0, 60);
-      const d = await api(`/media/displayIcons/user/me/upload?autoConvert=true&filename=${encodeURIComponent(filnavn)}`, { method: 'POST', body: fd });
+      const d = await api(`/media/displayIcons/user/me/upload?autoConvert=true&filename=${encodeURIComponent(filnavn)}`, { method: 'POST', headers: { 'Content-Type': type }, body: data });
       const mediaId = d.displayIcon && d.displayIcon.mediaId;
       if (!mediaId) throw new Error('Fikk ingen mediaId for ' + ik.navn);
       if (d.displayIcon.url) ikonUrler[mediaId] = d.displayIcon.url;
