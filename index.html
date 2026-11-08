@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yoto-ikoner</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{--bg:#121212;--kort:#1f1f1f;--kant:#333;--tekst:#f2f2f2;--dim:#a0a0a0;--aksent:#ff5a1f;--ok:#4caf50;--feil:#e53935}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tekst);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  main{max-width:640px;margin:0 auto;padding:16px 16px 80px}
+  h1{font-size:24px;margin:8px 0 16px}
+  h2{font-size:17px;margin:0 0 10px}
+  .kort{background:var(--kort);border:1px solid var(--kant);border-radius:14px;padding:16px;margin-bottom:14px}
+  .dim{color:var(--dim);font-size:14px}
+  button,.knapp{background:var(--aksent);color:#fff;border:0;border-radius:10px;padding:12px 16px;font-size:16px;font-weight:600;cursor:pointer;width:100%;display:block;text-align:center}
+  button.sek{background:#2c2c2c;border:1px solid var(--kant)}
+  button:disabled{opacity:.45;cursor:default}
+  input[type=text],select{width:100%;padding:11px;border-radius:10px;border:1px solid var(--kant);background:#181818;color:var(--tekst);font-size:16px}
+  label{display:block;margin:8px 0 6px;font-size:14px;color:var(--dim)}
+  .rad{display:flex;gap:8px}
+  .rad>*{flex:1}
+  code{background:#2a2a2a;padding:2px 6px;border-radius:6px;font-size:13px;word-break:break-all}
+  ol{padding-left:20px;margin:6px 0}
+  li{margin:4px 0}
+  .spor{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed #333}
+  .spor:last-child{border-bottom:0}
+  .nr{width:26px;text-align:right;color:var(--dim);font-variant-numeric:tabular-nums}
+  .tittel{color:var(--tekst);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ik{width:36px;height:36px;image-rendering:pixelated;background:#2a2a2a;border-radius:6px;flex:none}
+  .pil{color:var(--dim)}
+  .status{font-size:13px;width:22px;text-align:center}
+  .meld{padding:10px 12px;border-radius:10px;margin-top:10px;font-size:14px}
+  .meld.ok{background:#1d3a1f}.meld.feil{background:#4a1c1c}.meld.info{background:#262626}
+  .skjult{display:none}
+  .topp{display:flex;justify-content:space-between;align-items:center}
+  .lenke{background:none;border:0;color:var(--dim);font-size:14px;width:auto;padding:4px;text-decoration:underline}
+  input[type=checkbox]{width:20px;height:20px;accent-color:var(--aksent)}
+</style>
+</head>
+<body>
+<main>
+  <div class="topp"><h1>Yoto-ikoner</h1><button id="loggUt" class="lenke skjult">Logg ut</button></div>
+
+  <!-- Oppsett -->
+  <section id="oppsett" class="kort skjult">
+    <h2>Engangsoppsett</h2>
+    <ol class="dim">
+      <li>Gå til <a href="https://dashboard.yoto.dev/" style="color:#fff">dashboard.yoto.dev</a> og logg inn med Yoto-kontoen din.</li>
+      <li>Lag en ny app av typen <b>Public</b> (offentlig klient).</li>
+      <li>Legg til denne adressen som callback / redirect URL (og som allowed origin hvis det spørres):<br><code id="minUrl"></code></li>
+      <li>Huk av scopene <code>user:content:manage</code> og <code>offline_access</code>.</li>
+      <li>Kopier <b>Client ID</b> og lim den inn her:</li>
+    </ol>
+    <label for="klientId">Client ID</label>
+    <input type="text" id="klientId" autocomplete="off" spellcheck="false">
+    <div style="height:10px"></div>
+    <button id="lagreKlient">Lagre</button>
+  </section>
+
+  <!-- Innlogging -->
+  <section id="innlogging" class="kort skjult">
+    <h2>Logg inn</h2>
+    <p class="dim">Du sendes til Yoto for å logge inn, og kommer tilbake hit etterpå.</p>
+    <button id="loggInn">Logg inn med Yoto</button>
+    <button id="endreKlient" class="lenke" style="margin-top:8px">Endre Client ID</button>
+  </section>
+
+  <!-- Hovedflyt -->
+  <section id="app" class="skjult">
+    <div class="kort">
+      <h2>1. Velg spilleliste</h2>
+      <select id="spilleliste"><option value="">Laster …</option></select>
+    </div>
+
+    <div class="kort">
+      <h2>2. Velg ikoner</h2>
+      <label for="sett">Ferdige ikonsett</label>
+      <select id="sett"><option value="">– Velg sett –</option></select>
+      <label>…eller egne filer (PNG eller ZIP)</label>
+      <input type="file" id="filer" accept=".png,.gif,.zip,image/png,image/gif,application/zip" multiple>
+      <p class="dim" style="margin-bottom:0">Filnavnet må starte med låtnummeret, f.eks. <code>04_Jeg_vil_tro.png</code> → låt 4.</p>
+    </div>
+
+    <div class="kort">
+      <h2>3. Sjekk og last opp</h2>
+      <div id="sporliste" class="dim">Velg spilleliste for å se låtene.</div>
+      <div style="height:12px"></div>
+      <button id="lastOpp" disabled>Last opp ikoner</button>
+      <div id="melding"></div>
+    </div>
+  </section>
+
+  <div id="globalMelding"></div>
+</main>
+
+<script>
+const AUTH = 'https://login.yotoplay.com/authorize';
+const TOKEN = 'https://login.yotoplay.com/oauth/token';
+const API = 'https://api.yotoplay.com';
+const SCOPE = 'user:content:manage offline_access';
+const REDIRECT = location.origin + location.pathname;
+
+const $ = id => document.getElementById(id);
+const lager = {
+  hent(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  sett(k,v){ try { v==null ? localStorage.removeItem(k) : localStorage.setItem(k,v); } catch(e){} }
+};
+
+function vis(id, på){ $(id).classList.toggle('skjult', !på); }
+function melding(el, tekst, type='info'){ $(el).innerHTML = tekst ? `<div class="meld ${type}">${tekst}</div>` : ''; }
+function esc(s){ return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// ---------- PKCE ----------
+function b64url(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function tilfeldig(n=48){ const a=new Uint8Array(n); crypto.getRandomValues(a); return b64url(a); }
+async function utfordring(v){ return b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v))); }
+
+async function startInnlogging(){
+  const klient = lager.hent('yoto_klient');
+  const verifier = tilfeldig();
+  const state = tilfeldig(16);
+  sessionStorage.setItem('pkce_verifier', verifier);
+  sessionStorage.setItem('pkce_state', state);
+  const p = new URLSearchParams({
+    audience: API, scope: SCOPE, response_type: 'code', client_id: klient,
+    code_challenge: await utfordring(verifier), code_challenge_method: 'S256',
+    redirect_uri: REDIRECT, state
+  });
+  location.href = `${AUTH}?${p}`;
+}
+
+async function håndterTilbakekomst(){
+  const q = new URLSearchParams(location.search);
+  if (q.get('error')) {
+    history.replaceState(null,'',REDIRECT);
+    melding('globalMelding', 'Innlogging feilet: ' + esc(q.get('error_description') || q.get('error')), 'feil');
+    return;
+  }
+  const code = q.get('code');
+  if (!code) return;
+  history.replaceState(null,'',REDIRECT);
+  if (q.get('state') !== sessionStorage.getItem('pkce_state')) {
+    melding('globalMelding','Innloggingen kunne ikke bekreftes (state stemmer ikke). Prøv igjen.','feil'); return;
+  }
+  const svar = await fetch(TOKEN, {
+    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body: new URLSearchParams({ grant_type:'authorization_code', client_id: lager.hent('yoto_klient'),
+      code_verifier: sessionStorage.getItem('pkce_verifier'), code, redirect_uri: REDIRECT })
+  });
+  sessionStorage.removeItem('pkce_verifier'); sessionStorage.removeItem('pkce_state');
+  if (!svar.ok) { melding('globalMelding','Kunne ikke hente innloggingsnøkkel: ' + esc(await svar.text()), 'feil'); return; }
+  lagreTokens(await svar.json());
+}
+
+function lagreTokens(t){
+  lager.sett('yoto_access', t.access_token);
+  if (t.refresh_token) lager.sett('yoto_refresh', t.refresh_token);
+  lager.sett('yoto_utloper', String(Date.now() + (t.expires_in || 3600) * 1000));
+}
+
+async function gyldigToken(){
+  const access = lager.hent('yoto_access');
+  const utløper = Number(lager.hent('yoto_utloper') || 0);
+  if (access && Date.now() < utløper - 60000) return access;
+  const refresh = lager.hent('yoto_refresh');
+  if (!refresh) throw new Error('ikke-innlogget');
+  const svar = await fetch(TOKEN, {
+    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body: new URLSearchParams({ grant_type:'refresh_token', client_id: lager.hent('yoto_klient'), refresh_token: refresh })
+  });
+  if (!svar.ok) { loggUt(); throw new Error('ikke-innlogget'); }
+  lagreTokens(await svar.json());
+  return lager.hent('yoto_access');
+}
+
+async function api(sti, valg={}){
+  const token = await gyldigToken();
+  const svar = await fetch(API + sti, { ...valg, headers: { ...(valg.headers||{}), Authorization: `Bearer ${token}` } });
+  if (!svar.ok) throw new Error(`${svar.status}: ${(await svar.text()).slice(0,300)}`);
+  return svar.json();
+}
+
+function loggUt(){
+  ['yoto_access','yoto_refresh','yoto_utloper'].forEach(k => lager.sett(k, null));
+  start();
+}
+
+// ---------- Data ----------
+let kort = null;            // valgt spilleliste (full)
+let nyeIkoner = {};         // nummer -> {navn, blob, url}
+const ikonUrler = {};       // mediaId -> url
+
+async function lastIkonbibliotek(){
+  for (const sti of ['/media/displayIcons/user/me', '/media/displayIcons/user/yoto']) {
+    try {
+      const d = await api(sti);
+      (d.displayIcons || []).forEach(i => { if (i.mediaId && i.url) ikonUrler[i.mediaId] = i.url; });
+    } catch(e) { /* ikke kritisk */ }
+  }
+}
+
+async function lastSpillelister(){
+  const sel = $('spilleliste');
+  try {
+    const d = await api('/content/mine');
+    const liste = (d.cards || []).sort((a,b) => (a.title||'').localeCompare(b.title||'', 'no'));
+    sel.innerHTML = '<option value="">– Velg spilleliste –</option>' +
+      liste.map(c => `<option value="${esc(c.cardId)}">${esc(c.title || c.cardId)}</option>`).join('');
+    const forrige = lager.hent('yoto_sist_liste');
+    if (forrige && liste.some(c => c.cardId === forrige)) { sel.value = forrige; await velgSpilleliste(); }
+  } catch(e) {
+    if (e.message === 'ikke-innlogget') return;
+    sel.innerHTML = '<option value="">Kunne ikke hente spillelister</option>';
+    melding('melding', 'Feil ved henting av spillelister: ' + esc(e.message), 'feil');
+  }
+}
+
+async function lastSett(){
+  try {
+    const d = await (await fetch('sett.json', {cache:'no-store'})).json();
+    $('sett').innerHTML = '<option value="">– Velg sett –</option>' +
+      d.slice().reverse().map(s => `<option value="${esc(s.id)}">${esc(s.navn)}</option>`).join('');
+    $('sett').dataset.json = JSON.stringify(d);
+  } catch(e) { $('sett').innerHTML = '<option value="">(ingen sett funnet)</option>'; }
+}
+
+async function velgSpilleliste(){
+  const id = $('spilleliste').value;
+  kort = null; tegn();
+  if (!id) return;
+  lager.sett('yoto_sist_liste', id);
+  $('sporliste').textContent = 'Laster låter …';
+  try { kort = (await api('/content/' + encodeURIComponent(id))).card; }
+  catch(e) { melding('melding', 'Kunne ikke hente spillelisten: ' + esc(e.message), 'feil'); }
+  tegn();
+}
+
+function nummerFraNavn(navn){
+  const m = navn.split('/').pop().match(/^\s*(\d{1,3})/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+function leggTilIkon(navn, blob){
+  const nr = nummerFraNavn(navn);
+  if (!nr) return false;
+  if (nyeIkoner[nr]) URL.revokeObjectURL(nyeIkoner[nr].url);
+  nyeIkoner[nr] = { navn: navn.split('/').pop(), blob, url: URL.createObjectURL(blob), med: true };
+  return true;
+}
+
+async function velgSett(){
+  const id = $('sett').value; if (!id) return;
+  const sett = JSON.parse($('sett').dataset.json || '[]').find(s => s.id === id);
+  nyeIkoner = {};
+  for (const f of sett.filer) {
+    const b = await (await fetch(f)).blob();
+    leggTilIkon(f, b);
+  }
+  $('filer').value = '';
+  tegn();
+}
+
+async function velgFiler(){
+  nyeIkoner = {}; $('sett').value = '';
+  let hoppet = [];
+  for (const f of $('filer').files) {
+    if (/\.zip$/i.test(f.name)) {
+      const zip = await JSZip.loadAsync(f);
+      for (const [navn, fil] of Object.entries(zip.files)) {
+        if (fil.dir || !/\.(png|gif)$/i.test(navn) || navn.includes('__MACOSX')) continue;
+        const blob = new Blob([await fil.async('arraybuffer')], { type: /\.gif$/i.test(navn) ? 'image/gif' : 'image/png' });
+        if (!leggTilIkon(navn, blob)) hoppet.push(navn);
+      }
+    } else if (!leggTilIkon(f.name, f)) hoppet.push(f.name);
+  }
+  melding('melding', hoppet.length ? 'Hoppet over (mangler nummer i filnavn): ' + esc(hoppet.join(', ')) : '', 'info');
+  tegn();
+}
+
+function iconRef(display){ const r = display && display.icon16x16; return r && r.startsWith('yoto:#') ? r.slice(6) : null; }
+
+function tegn(){
+  const ut = $('sporliste');
+  if (!kort) { ut.innerHTML = '<span class="dim">Velg spilleliste for å se låtene.</span>'; $('lastOpp').disabled = true; return; }
+  const kapitler = (kort.content && kort.content.chapters) || [];
+  ut.innerHTML = kapitler.map((k, i) => {
+    const nr = i + 1;
+    const nå = ikonUrler[iconRef(k.display) || iconRef(k.tracks && k.tracks[0] && k.tracks[0].display)];
+    const ny = nyeIkoner[nr];
+    return `<div class="spor">
+      <span class="nr">${nr}.</span>
+      ${nå ? `<img class="ik" src="${esc(nå)}" alt="">` : '<span class="ik"></span>'}
+      ${ny ? `<span class="pil">→</span><img class="ik" src="${ny.url}" alt="">` : ''}
+      <span class="tittel">${esc(k.title || (k.tracks && k.tracks[0] && k.tracks[0].title) || '')}</span>
+      ${ny ? `<input type="checkbox" data-nr="${nr}" ${ny.med ? 'checked' : ''}>` : ''}
+      <span class="status" id="st${nr}"></span>
+    </div>`;
+  }).join('') || '<span class="dim">Spillelisten har ingen låter.</span>';
+  const ekstra = Object.keys(nyeIkoner).map(Number).filter(n => n > kapitler.length);
+  if (ekstra.length) ut.innerHTML += `<p class="dim">Ikoner uten tilhørende låt: ${ekstra.join(', ')}</p>`;
+  ut.querySelectorAll('input[type=checkbox]').forEach(cb => cb.onchange = () => { nyeIkoner[cb.dataset.nr].med = cb.checked; oppdaterKnapp(); });
+  oppdaterKnapp();
+}
+
+function valgte(){
+  const n = (kort && kort.content && kort.content.chapters || []).length;
+  return Object.entries(nyeIkoner).filter(([nr, v]) => v.med && Number(nr) <= n).map(([nr]) => Number(nr));
+}
+function oppdaterKnapp(){
+  const n = valgte().length;
+  $('lastOpp').disabled = !n;
+  $('lastOpp').textContent = n ? `Last opp ${n} ikon${n > 1 ? 'er' : ''}` : 'Last opp ikoner';
+}
+
+async function lastOpp(){
+  const nrListe = valgte().sort((a,b) => a-b);
+  $('lastOpp').disabled = true;
+  melding('melding', 'Laster opp …', 'info');
+  try {
+    // Hent ferskeste versjon av spillelisten rett før vi endrer den
+    kort = (await api('/content/' + encodeURIComponent(kort.cardId))).card;
+    const kapitler = kort.content.chapters;
+    for (const nr of nrListe) {
+      $('st' + nr).textContent = '⏳';
+      const ik = nyeIkoner[nr];
+      const fd = new FormData();
+      fd.append('file', ik.blob, ik.navn);
+      const filnavn = ik.navn.replace(/\.[^.]+$/, '').replace(/[^\w\-]+/g, '_').slice(0, 60);
+      const d = await api(`/media/displayIcons/user/me/upload?autoConvert=true&filename=${encodeURIComponent(filnavn)}`, { method: 'POST', body: fd });
+      const mediaId = d.displayIcon && d.displayIcon.mediaId;
+      if (!mediaId) throw new Error('Fikk ingen mediaId for ' + ik.navn);
+      if (d.displayIcon.url) ikonUrler[mediaId] = d.displayIcon.url;
+      const ref = 'yoto:#' + mediaId;
+      const k = kapitler[nr - 1];
+      k.display = { ...(k.display || {}), icon16x16: ref };
+      (k.tracks || []).forEach(t => { t.display = { ...(t.display || {}), icon16x16: ref }; });
+      $('st' + nr).textContent = '⬆️';
+    }
+    melding('melding', 'Lagrer spillelisten …', 'info');
+    await api('/content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(kort) });
+    nrListe.forEach(nr => $('st' + nr).textContent = '✅');
+    melding('melding', `Ferdig! ${nrListe.length} ikoner er lagt inn på «${esc(kort.title)}».`, 'ok');
+    nyeIkoner = {}; $('sett').value = ''; $('filer').value = '';
+    await velgSpilleliste();
+  } catch(e) {
+    melding('melding', 'Noe gikk galt: ' + esc(e.message) + '<br>Spillelisten er ikke endret hvis feilen kom før «Lagrer».', 'feil');
+    oppdaterKnapp();
+  }
+}
+
+// ---------- Oppstart ----------
+async function start(){
+  $('minUrl').textContent = REDIRECT;
+  const klient = lager.hent('yoto_klient');
+  vis('oppsett', !klient); vis('innlogging', false); vis('app', false); vis('loggUt', false);
+  if (!klient) return;
+  await håndterTilbakekomst();
+  const innlogget = lager.hent('yoto_refresh') || lager.hent('yoto_access');
+  vis('innlogging', !innlogget);
+  if (!innlogget) return;
+  vis('app', true); vis('loggUt', true);
+  await Promise.all([lastSpillelister(), lastSett(), lastIkonbibliotek()]);
+  tegn();
+}
+
+$('lagreKlient').onclick = () => { const v = $('klientId').value.trim(); if (v) { lager.sett('yoto_klient', v); start(); } };
+$('endreKlient').onclick = () => { $('klientId').value = lager.hent('yoto_klient') || ''; lager.sett('yoto_klient', null); start(); };
+$('loggInn').onclick = startInnlogging;
+$('loggUt').onclick = loggUt;
+$('spilleliste').onchange = velgSpilleliste;
+$('sett').onchange = velgSett;
+$('filer').onchange = velgFiler;
+$('lastOpp').onclick = lastOpp;
+start();
+</script>
+</body>
+</html>
