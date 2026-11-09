@@ -1,5 +1,5 @@
 // Nett først (så nye ikonsett og oppdateringer alltid kommer med), cache som reserve.
-const CACHE = 'yoto-ikoner-v4';
+const CACHE = 'yoto-ikoner-v5';
 const SKALL = ['./', './index.html', './manifest.webmanifest', './app-ikon/ikon-192.png', './app-ikon/ikon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'];
 
