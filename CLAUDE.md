@@ -12,8 +12,10 @@ Gjør alt uten å spørre underveis:
    der NN er låtnummeret fra bestillingen (to sifre). Unngå æøå i filnavn (aa/oe/ae).
 4. Kjør `python3 verktoy/lag_sett.py ikoner.txt --id sett-NN --navn "<spilleliste> (låt X–Y)" --cardId <cardId>`.
 5. Se på forhåndsvisningen (/tmp/sett-NN.png) og rett ikoner som ikke leses tydelig.
-6. Commit og push rett til `main`. Appen finner settet selv (koblet via cardId) og velger det automatisk.
-7. Send forhåndsvisningen til Øystein og si kort hva hvert ikon viser. Han trykker «Last opp» i appen selv.
+6. Står bestillingens «Bruker-ID» ikke i `eier.json` (`brukere`-listen), legg den til. Det er Øysteins
+   Yoto-bruker; bare eiere ser ferdige ikonsett og bestillingsknappen i appen.
+7. Commit og push rett til `main`. Appen finner settet selv (koblet via cardId) og velger det automatisk.
+8. Send forhåndsvisningen til Øystein og si kort hva hvert ikon viser. Han trykker «Last opp» i appen selv.
 
 ## Stil (samme som Yotos egne ikoner)
 - 16×16, gjennomsiktig bakgrunn, flate klare farger, litt mørkere kontur/skygge i samme fargetone, emoji-aktig.

@@ -83,9 +83,12 @@
 
     <div class="kort">
       <h2>2. Velg ikoner</h2>
-      <label for="sett">Ferdige ikonsett</label>
-      <select id="sett"><option value="">– Velg sett –</option></select>
-      <label>…eller egne filer (PNG eller ZIP)</label>
+      <div id="settDel" class="skjult">
+        <label for="sett">Ferdige ikonsett</label>
+        <select id="sett"><option value="">– Velg sett –</option></select>
+        <label>…eller egne filer (PNG eller ZIP)</label>
+      </div>
+      <label id="egneLabel">Ikonfiler (PNG eller ZIP)</label>
       <input type="file" id="filer" accept=".png,.gif,.zip,image/png,image/gif,application/zip" multiple>
       <p class="dim" style="margin-bottom:0">Filnavnet må starte med låtnummeret, f.eks. <code>04_Jeg_vil_tro.png</code> → låt 4.</p>
     </div>
@@ -108,6 +111,9 @@
   </section>
 
   <div id="globalMelding"></div>
+  <p class="dim skjult" id="brukerInfo" style="text-align:center;font-size:12px;margin-top:24px">
+    Bruker-ID: <span id="brukerId"></span> <button class="lenke" id="kopierId" style="font-size:12px">Kopier</button>
+  </p>
 </main>
 
 <script>
@@ -224,6 +230,24 @@ async function lastIkonbibliotek(){
   }
 }
 
+// ---------- Eier (Øystein) vs. andre brukere ----------
+let eier = false, eiere = [];
+function brukerId(){
+  try { const p = (lager.hent('yoto_access') || '').split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+        return JSON.parse(decodeURIComponent(escape(atob(p)))).sub || ''; } catch(e){ return ''; }
+}
+async function lastEiere(){
+  try { eiere = (await (await fetch('eier.json', {cache:'no-store'})).json()).brukere || []; } catch(e){ eiere = []; }
+}
+function settEier(mineKort){
+  const id = brukerId();
+  const kortMedSett = new Set(settListe().map(s => s.cardId).filter(Boolean));
+  eier = !eiere.length || eiere.includes(id) || mineKort.some(c => kortMedSett.has(c.cardId));
+  vis('settDel', eier); vis('egneLabel', !eier);
+  vis('brukerInfo', !!id); $('brukerId').textContent = id;
+  if (!eier) { $('sett').value = ''; vis('bestillKort', false); }
+}
+
 async function lastSpillelister(){
   const sel = $('spilleliste');
   try {
@@ -231,6 +255,7 @@ async function lastSpillelister(){
     const liste = (d.cards || []).sort((a,b) => (a.title||'').localeCompare(b.title||'', 'no'));
     sel.innerHTML = '<option value="">– Velg spilleliste –</option>' +
       liste.map(c => `<option value="${esc(c.cardId)}">${esc(c.title || c.cardId)}</option>`).join('');
+    settEier(liste);
     const forrige = lager.hent('yoto_sist_liste');
     if (forrige && liste.some(c => c.cardId === forrige)) { sel.value = forrige; await velgSpilleliste(); }
   } catch(e) {
@@ -273,8 +298,8 @@ function manglerIkon(){
 }
 
 function tegnBestilling(){
-  vis('bestillKort', !!kort);
-  if (!kort) return;
+  vis('bestillKort', !!kort && eier);
+  if (!kort || !eier) return;
   const mangler = manglerIkon();
   const venter = hentJson('yoto_bestilling', null);
   if (!mangler.length) {
@@ -285,7 +310,7 @@ function tegnBestilling(){
       '. Knappen åpner Claude med bestillingen ferdig utfylt – trykk send, så dukker ikonene opp her av seg selv.';
     $('bestill').classList.remove('skjult');
     const tekst = `Bestilling fra Yoto-ikoner-appen. Lag ikoner etter instruksjonene i CLAUDE.md i GitHub-repoet oysteineliassen/yoto-ikoner, og push dem dit.\n\n` +
-      `Spilleliste: ${kort.title}\ncardId: ${kort.cardId}\n\nLåter som trenger ikon:\n` +
+      `Spilleliste: ${kort.title}\ncardId: ${kort.cardId}\nBruker-ID: ${brukerId()}\n\nLåter som trenger ikon:\n` +
       mangler.map(m => `${m.nr}. ${m.tittel}`).join('\n');
     $('bestill').href = 'https://claude.ai/new?q=' + encodeURIComponent(tekst);
   }
@@ -304,7 +329,7 @@ function nyttSettFor(cardId){
 }
 
 async function autoVelgSett(){
-  if (!kort) return false;
+  if (!kort || !eier) return false;
   const s = nyttSettFor(kort.cardId);
   if (!s || $('sett').value === s.id) return false;
   $('sett').value = s.id; await velgSett();
@@ -462,7 +487,7 @@ async function start(){
   vis('innlogging', !innlogget);
   if (!innlogget) return;
   vis('app', true); vis('loggUt', true);
-  await Promise.all([lastSett(), lastIkonbibliotek()]);
+  await Promise.all([lastSett(), lastIkonbibliotek(), lastEiere()]);
   await lastSpillelister();
   tegn(); startVenting(); sjekkBestilling();
 }
@@ -475,6 +500,7 @@ $('spilleliste').onchange = velgSpilleliste;
 $('sett').onchange = velgSett;
 $('filer').onchange = velgFiler;
 $('lastOpp').onclick = lastOpp;
+$('kopierId').onclick = async () => { try { await navigator.clipboard.writeText(brukerId()); $('kopierId').textContent = 'Kopiert!'; } catch(e) {} };
 $('alleLater').onchange = tegnBestilling;
 start();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
